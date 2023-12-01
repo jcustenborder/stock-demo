@@ -49,6 +49,19 @@ export class StockRowController extends RowController {
     this.stockStatusDownlink.open();
   }
 
+  protected override onUnmount(): void {
+    console.log(`unmounting StockRowController: ${this.key}`);
+  }
+
+  @Property({
+    valueType: String,
+    value: "",
+    didSetValue(newValue, oldValue) {
+      console.log("newValue:", newValue);
+    },
+  })
+  readonly searchTerm!: Property<this, String>;
+
   @TraitViewRef({
     viewType: RowView,
     extends: true,

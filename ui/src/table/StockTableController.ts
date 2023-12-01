@@ -1,9 +1,5 @@
 import { ValueDownlink } from "@swim/client";
-import {
-  TraitViewControllerRef,
-  TraitViewControllerSet,
-  TraitViewRef,
-} from "@swim/controller";
+import { Controller, TraitViewControllerRef, TraitViewControllerSet, TraitViewRef } from "@swim/controller";
 import {
   HeaderController,
   HeaderTrait,
@@ -16,20 +12,23 @@ import {
   TextCellView,
 } from "@swim/table";
 import { Observes } from "@swim/util";
-import { StockRowController } from "../row/StockRowController";
 import { Record as SwimRecord } from "@swim/structure";
 import { Uri } from "@swim/uri";
 import { Model } from "@swim/model";
 import { Property } from "@swim/component";
+import debounce from "lodash-es/debounce";
+import { StockRowController } from "../row/StockRowController";
 import { StockRowView } from "../row/StockRowView";
 import { StockRowTrait } from "../row/StockRowTrait";
 import { ValueChange, SymbolUpdate } from "../types";
 
 export class StockTableController extends TableController {
   _didSync: boolean = false;
+  _symbolsVisibility: Record<string, boolean> = {};
 
   constructor() {
     super();
+    console.log("STableC constructor");
     StockTableController.initFasteners(this);
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -48,7 +47,49 @@ export class StockTableController extends TableController {
     this.symbolsDownlink.setHostUri(host);
     this.symbolsDownlink.setNodeUri(nodeUri);
     this.symbolsDownlink.open();
+
+    const that: StockTableController = this;
+
+    setTimeout(() => {
+      const searchInput = document.getElementById("search-input");
+      searchInput?.addEventListener(
+        "input",
+        debounce(function (e: Event) {
+          const searchTerm = (e.target as HTMLInputElement).value.replace(" ", "").toUpperCase();
+          const stockSymbols = Object.keys(that._symbolsVisibility);
+
+          stockSymbols.forEach((k) => {
+            const visible = that._symbolsVisibility[k];
+            if (!searchTerm.length && !visible) {
+              // no search term provided and row is unmounted, mounting row
+              that.addNewStockRowController(k);
+            } else if (visible && !k.startsWith(searchTerm)) {
+              // unmounting row which did not match search
+              that.removeStockRowController(k);
+            } else if (!visible && k.startsWith(searchTerm)) {
+              // row is unmounted but row key matches search term, mounting row
+              that.addNewStockRowController(k);
+            }
+          });
+        }, 200)
+      );
+    }, 500);
   }
+
+  protected override didMount(): void {
+    console.log("STableC didMount");
+  }
+
+  @Property({
+    valueType: String,
+    value: "",
+    didSetValue(newValue, oldValue) {
+      console.log("newValue STableC:", newValue);
+
+      this.owner.rows;
+    },
+  })
+  readonly searchTerm!: Property<this, String>;
 
   @Property({
     valueType: Model,
@@ -113,55 +154,67 @@ export class StockTableController extends TableController {
 
       const rowController = this.owner.getChild(symbol, StockRowController);
 
-      if (rowController) {
-        let change: ValueChange = "none";
-
-        return;
-      } else {
-        const rowModel = new Model();
-        const rowTrait = new StockRowTrait();
-        rowModel.setTrait(symbol, rowTrait);
-
-        // Create cells in trait before appending to model to display being set to 'none'
-        const symbolCell = rowTrait.getOrCreateCell("symbol", TextCellTrait);
-        const priceCell = rowTrait.getOrCreateCell("price", TextCellTrait);
-        const volumeCell = rowTrait.getOrCreateCell("volume", TextCellTrait);
-        const movementCell = rowTrait.getOrCreateCell("movement", TextCellTrait);
-
-        this.owner.tableModel.value.appendChild(rowModel);
-
-        const newStockRowController = Object.values(this.owner.rows.controllers).find(
-          (c) => c?.key === symbol
-        ) as StockRowController | undefined;
-
-        if (newStockRowController) {
-          newStockRowController.symbolCell.setTrait(symbolCell);
-          newStockRowController.priceCell.setTrait(priceCell);
-          newStockRowController.volumeCell.setTrait(volumeCell);
-          newStockRowController.movementCell.setTrait(movementCell);
-
-          ["symbol", "price", "volume", "movement"].forEach(function (key) {
-            const view = Object.values(
-              newStockRowController.row.attachView().leaf.attachView().cells.views
-            ).find((v) => v?.key === key) as TextCellView | undefined;
-            if (view) {
-              (
-                newStockRowController[`${key}Cell` as "priceCell"] as TraitViewRef<
-                  StockRowController,
-                  TextCellTrait,
-                  TextCellView
-                >
-              ).setView(view, null, key);
-            }
-            if (key === "symbol") {
-              newStockRowController.symbolCell.attachView().set({
-                content: symbol,
-              });
-            }
-          });
-        }
+      if (!rowController && this.owner._symbolsVisibility[symbol] !== false) {
+        this.owner.addNewStockRowController(symbol);
       }
     },
   })
   readonly symbolsDownlink!: ValueDownlink<this>;
+
+  removeStockRowController(symbol: string | undefined): void {
+    if (!symbol) {
+      return;
+    }
+
+    this._symbolsVisibility[symbol] = false;
+
+    this.tableModel.value.removeChild(symbol);
+  }
+
+  addNewStockRowController(symbol: string): void {
+    this._symbolsVisibility[symbol] = true;
+
+    const rowModel = new Model();
+    const rowTrait = new StockRowTrait();
+    rowModel.setTrait(symbol, rowTrait);
+
+    // Create cells in trait before appending to model to display being set to 'none'
+    const symbolCell = rowTrait.getOrCreateCell("symbol", TextCellTrait);
+    const priceCell = rowTrait.getOrCreateCell("price", TextCellTrait);
+    const volumeCell = rowTrait.getOrCreateCell("volume", TextCellTrait);
+    const movementCell = rowTrait.getOrCreateCell("movement", TextCellTrait);
+
+    this.tableModel.value.appendChild(rowModel, symbol);
+
+    const newStockRowController = Object.values(this.rows.controllers).find((c) => c?.key === symbol) as
+      | StockRowController
+      | undefined;
+
+    if (newStockRowController) {
+      newStockRowController.symbolCell.setTrait(symbolCell);
+      newStockRowController.priceCell.setTrait(priceCell);
+      newStockRowController.volumeCell.setTrait(volumeCell);
+      newStockRowController.movementCell.setTrait(movementCell);
+
+      ["symbol", "price", "volume", "movement"].forEach(function (key) {
+        const view = Object.values(newStockRowController.row.attachView().leaf.attachView().cells.views).find(
+          (v) => v?.key === key
+        ) as TextCellView | undefined;
+        if (view) {
+          (
+            newStockRowController[`${key}Cell` as "priceCell"] as TraitViewRef<
+              StockRowController,
+              TextCellTrait,
+              TextCellView
+            >
+          ).setView(view, null, key);
+        }
+        if (key === "symbol") {
+          newStockRowController.symbolCell.attachView().set({
+            content: symbol,
+          });
+        }
+      });
+    }
+  }
 }

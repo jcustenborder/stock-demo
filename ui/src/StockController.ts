@@ -14,34 +14,15 @@ export class StockController extends BoardController {
 
     const boardView = this.sheet.attachView();
     const panelView = this.panel.insertView(boardView);
-    const tablePanel = this.tablePanel.insertView(panelView);
+    this.tablePanel.insertView(panelView);
 
-    const tableModel = new Model();
-    tableModel.mount();
-    const tableTrait = new TableTrait();
-    tableModel.setTrait("table", tableTrait);
-    tableTrait.header.insertTrait();
-    tableTrait.appendTrait(TextColTrait, "symbol").set({
-      layout: { key: "symbol", grow: 3, textColor: Look.labelColor },
-      label: "Symbol",
-    });
-    tableTrait.appendTrait(TextColTrait, "price").set({
-      layout: { key: "price", grow: 3, textColor: Look.labelColor },
-      label: "Price",
-    });
-    tableTrait.appendTrait(TextColTrait, "volume").set({
-      layout: { key: "volume", grow: 4, textColor: Look.labelColor },
-      label: "Volume",
-    });
-    tableTrait.appendTrait(TextColTrait, "movement").set({
-      layout: { key: "movement", grow: 3, textColor: Look.labelColor },
-      label: "Movement",
-    });
+    this.tableController.attachController();
 
-    this.tableController.mount();
-    this.tableController.attachController().tableModel.set(tableModel);
-    this.tableController.attachController().table.insertView(tablePanel);
-    this.tableController.attachController().table.setTrait(tableTrait);
+    // const tableController = new StockTableController();
+    // tableController.mount();
+    // tableController.tableModel.set(tableModel);
+    // tableController.table.insertView(tablePanel);
+    // tableController.table.setTrait(tableTrait);
   }
 
   @Property({
@@ -119,6 +100,36 @@ export class StockController extends BoardController {
   @ControllerRef({
     controllerType: StockTableController,
     extends: true,
+    initController(controller: StockTableController): void {
+      console.log("initController");
+      const tableModel = new Model();
+      tableModel.mount();
+      const tableTrait = new TableTrait();
+      tableModel.setTrait("table", tableTrait);
+      tableTrait.header.insertTrait();
+      tableTrait.appendTrait(TextColTrait, "symbol").set({
+        layout: { key: "symbol", grow: 3, textColor: Look.labelColor },
+        label: "Symbol",
+      });
+      tableTrait.appendTrait(TextColTrait, "price").set({
+        layout: { key: "price", grow: 3, textColor: Look.labelColor },
+        label: "Price",
+      });
+      tableTrait.appendTrait(TextColTrait, "volume").set({
+        layout: { key: "volume", grow: 4, textColor: Look.labelColor },
+        label: "Volume",
+      });
+      tableTrait.appendTrait(TextColTrait, "movement").set({
+        layout: { key: "movement", grow: 3, textColor: Look.labelColor },
+        label: "Movement",
+      });
+
+      controller.mount();
+      console.log("controller:", controller);
+      controller.tableModel.set(tableModel);
+      controller.table.insertView(this.owner.tablePanel.attachView());
+      controller.table.setTrait(tableTrait);
+    },
   })
   readonly tableController!: ControllerRef<this, StockTableController>;
 }
