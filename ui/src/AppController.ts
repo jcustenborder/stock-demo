@@ -3,7 +3,7 @@ import { View, ViewRef } from "@swim/view";
 import { HtmlView } from "@swim/dom";
 import { ControllerRef } from "@swim/controller";
 import { HtmlIconView, VectorIcon } from "@swim/graphics";
-import { StockController } from "./MainController";
+import { StockController } from "./StockController";
 
 export class AppController extends BoardController {
   constructor() {

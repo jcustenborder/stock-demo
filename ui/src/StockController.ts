@@ -38,7 +38,15 @@ export class StockController extends BoardController {
       label: "Movement",
     });
 
-    this.tableController.mount();
+    /* I made a mistake mounting the StockTableController here. I accidentally wrote
+       this.tableController.mount();
+       instead of
+       this.tableController.attachController().mount();
+
+       Why am I still able to see the table and all its rows if it's not mounted?
+    */
+
+    this.tableController.attachController().mount();
     this.tableController.attachController().tableModel.set(tableModel);
     this.tableController.attachController().table.insertView(tablePanel);
     this.tableController.attachController().table.setTrait(tableTrait);

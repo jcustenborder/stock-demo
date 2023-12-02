@@ -47,6 +47,16 @@ export class StockRowController extends RowController {
     this.stockStatusDownlink.setHostUri(host);
     this.stockStatusDownlink.setNodeUri(nodeUri);
     this.stockStatusDownlink.open();
+
+    console.log("StockRowController constructor");
+    const that = this;
+    setTimeout(function() {
+      console.log("StockRowController is mounted?:", that.mounted);
+    }, 1000);
+  }
+
+  protected override onMount(): void {
+    console.log("StockRowController onMount");
   }
 
   @TraitViewRef({
