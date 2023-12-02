@@ -71,25 +71,12 @@ export class StockTableController extends TableController {
               that.addNewStockRowController(k);
             }
           });
+
+          that.rows.sort();
         }, 200)
       );
     }, 500);
   }
-
-  protected override didMount(): void {
-    console.log("STableC didMount");
-  }
-
-  @Property({
-    valueType: String,
-    value: "",
-    didSetValue(newValue, oldValue) {
-      console.log("newValue STableC:", newValue);
-
-      this.owner.rows;
-    },
-  })
-  readonly searchTerm!: Property<this, String>;
 
   @Property({
     valueType: Model,
@@ -114,6 +101,7 @@ export class StockTableController extends TableController {
 
   @TraitViewControllerSet({
     extends: true,
+    sorted: true,
     controllerDidEnterLeafView(leafView, rowController) {
       leafView.hover.focus(false);
     },
@@ -139,6 +127,13 @@ export class StockTableController extends TableController {
       }
 
       return super.createController(trait);
+    },
+    compare(a, b) {
+      console.log(`comparing ${a.key} and ${b.key}`);
+      if (a.key === b.key) {
+        return 0;
+      }
+      return (a.key ?? "") < (b.key ?? "") ? -1 : 1;
     },
   })
   override readonly rows!: TraitViewControllerSet<this, StockRowTrait, StockRowView, StockRowController> &
