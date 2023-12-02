@@ -49,10 +49,6 @@ export class StockRowController extends RowController {
     this.stockStatusDownlink.open();
   }
 
-  protected override onUnmount(): void {
-    console.log(`unmounting StockRowController: ${this.key}`);
-  }
-
   @Property({
     valueType: String,
     value: "",

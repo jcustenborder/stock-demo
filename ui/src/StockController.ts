@@ -7,6 +7,7 @@ import { TableTrait, TextColTrait } from "@swim/ux";
 import { Look } from "@swim/theme";
 import { StockTableController } from "./table/StockTableController";
 import { Property } from "@swim/component";
+import { StockTableModel } from "./table/StockTableModel";
 
 export class StockController extends BoardController {
   constructor() {
@@ -102,7 +103,7 @@ export class StockController extends BoardController {
     extends: true,
     initController(controller: StockTableController): void {
       console.log("initController");
-      const tableModel = new Model();
+      const tableModel = new StockTableModel();
       tableModel.mount();
       const tableTrait = new TableTrait();
       tableModel.setTrait("table", tableTrait);
