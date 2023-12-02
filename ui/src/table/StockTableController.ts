@@ -56,28 +56,38 @@ export class StockTableController extends TableController {
         "input",
         debounce(function (e: Event) {
           const searchTerm = (e.target as HTMLInputElement).value.replace(" ", "").toUpperCase();
-          const stockSymbols = Object.keys(that._symbolsVisibility);
+          const controllerKeys = Object.keys(that.rows.controllers);
 
-          stockSymbols.forEach((k) => {
+          controllerKeys.forEach((controllerKey) => {
+            const rowController = that.rows.controllers[controllerKey];
+            const k = rowController?.key ?? "";
             const visible = that._symbolsVisibility[k];
-            if (!searchTerm.length && !visible) {
+            if (!k) {
+              console.log("case 1, returning early");
+              return;
+            } else if (!searchTerm.length && !visible) {
+              console.log("case 2, no search term found, mount all unmounted rows");
               // no search term provided and row is unmounted, mounting row
-              that.addNewStockRowController(k);
+              rowController!.mount();
             } else if (visible && !k.startsWith(searchTerm)) {
+              console.log("case 3, unmounting row which does not match search term");
               // unmounting row which did not match search
-              that.removeStockRowController(k);
+              rowController!.unmount();
             } else if (!visible && k.startsWith(searchTerm)) {
+              console.log("case 4, mounting row which now matches new search term");
               // row is unmounted but row key matches search term, mounting row
-              that.addNewStockRowController(k);
+              rowController!.mount();
+            } else {
+              console.log("case 5, no condition met");
             }
+            console.log("rowController:", rowController);
+            console.log("rowController?.mounted:", rowController?.mounted);
           });
+
+          console.log("StockTableController:", that);
         }, 200)
       );
     }, 500);
-  }
-
-  protected override didMount(): void {
-    console.log("STableC didMount");
   }
 
   @Property({
