@@ -43,7 +43,8 @@ export class StockController extends BoardController {
        instead of
        this.tableController.attachController().mount();
 
-       Why am I still able to see the table and all its rows if it's not mounted?
+       This caused the StockTableController and all of its StockRowController children to be unmounted.
+       My question is why am I still able to see the table and all its rows if they're not mounted?
     */
 
     this.tableController.attachController().mount();
